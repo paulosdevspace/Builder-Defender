@@ -8,6 +8,7 @@ public class HealthBar : MonoBehaviour
     [SerializeField] private HealthSystem healthSystem;
 
     private Transform barTransform;
+    private Transform separatorContainer;
 
     private void Awake()
     {
@@ -16,9 +17,20 @@ public class HealthBar : MonoBehaviour
 
     private void Start()
     {
+        separatorContainer = transform.Find("separatorContainer");
+        ConstructHealthBarSeparators();
+
         healthSystem.OnDamaged += healthSystem_OnDamaged;
         healthSystem.OnHealed += HealthSystem_OnHealed;
+        healthSystem.OnHealthAmountMaxChanged += HealthSystem_OnHealthAmountMaxChanged;
+
+        UpdateBar();
         UpdateHealthBarVisible();
+    }
+
+    private void HealthSystem_OnHealthAmountMaxChanged(object sender, EventArgs e)
+    {
+        ConstructHealthBarSeparators();
     }
 
     private void HealthSystem_OnHealed(object sender, EventArgs e)
@@ -33,10 +45,37 @@ public class HealthBar : MonoBehaviour
         UpdateHealthBarVisible();
     }
 
+
+    private void ConstructHealthBarSeparators()
+    {
+        Transform separatorTemplate = separatorContainer.Find("separatorTemplate");
+        separatorTemplate.gameObject.SetActive(false);
+
+        foreach(Transform separatorTransform in separatorContainer)
+        {
+            if (separatorTransform == separatorTemplate) continue;
+            Destroy(separatorTransform.gameObject);
+        }
+
+        int healthAmountSeparator = 10;
+        float barSize = 3f;
+        float barOneHealthAmountSize = barSize / healthSystem.GetHealthAmountMax();
+        int healthSeparatorCount = Mathf.FloorToInt(healthSystem.GetHealthAmount() / healthAmountSeparator);
+
+        for (int i = 1; i < healthSeparatorCount; i++)
+        {
+            Transform separatorTransform = Instantiate(separatorTemplate, separatorContainer);
+            separatorTransform.gameObject.SetActive(true);
+            separatorTransform.localPosition = new Vector3(barOneHealthAmountSize * i * healthAmountSeparator, 0, 0);
+        }
+    }
+
     private void UpdateBar()
     {
         barTransform.localScale = new Vector3(healthSystem.GetHealthAmountNormalized(),1,1);
     }
+
+
     private void UpdateHealthBarVisible()
     {
         if (healthSystem.IsFullHealth())
@@ -47,6 +86,8 @@ public class HealthBar : MonoBehaviour
         {
             gameObject.SetActive(true);
         }
+        gameObject.SetActive(true);
+
     }
 
 }
